@@ -1,0 +1,7 @@
+data_modelling_basics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'data_modelling_basics.duckdb') }}"
+      threads: 4

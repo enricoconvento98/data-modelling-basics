@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: stg_scd__customer_changes
+    description: Customer change log, one row per (customer, effective_date).
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination: [customer_id, effective_date]
+
+  - name: stg_scd__sales
+    description: One row per sale.
+    columns:
+      - name: sale_id
+        data_tests: [unique, not_null]
+
+  - name: stg_scd__customers_as_of
+    description: >
+      Current customer state as of var('scd_as_of'). Input of the
+      snp_scd_customer snapshot.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]

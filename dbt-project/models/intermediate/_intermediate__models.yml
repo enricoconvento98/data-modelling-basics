@@ -1,0 +1,66 @@
+version: 2
+
+models:
+  - name: int_order_lines__freight_allocated
+    description: Order lines with order freight allocated by amount (Kimball topic).
+    columns:
+      - name: line_id
+        data_tests: [unique, not_null]
+
+  - name: int_scd__customer_versions
+    description: Customer change log with no-op changes removed (SCD topic).
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination: [customer_id, valid_from]
+
+unit_tests:
+  - name: freight_allocation_is_proportional_to_amount
+    description: 10 freight over lines of 20/30/50 gives 2/3/5.
+    model: int_order_lines__freight_allocated
+    given:
+      - input: ref('stg_shop__order_lines')
+        rows:
+          - {line_id: 1, order_id: 100, product_id: 1, amount: 20}
+          - {line_id: 2, order_id: 100, product_id: 2, amount: 30}
+          - {line_id: 3, order_id: 100, product_id: 1, amount: 50}
+      - input: ref('stg_shop__orders')
+        rows:
+          - {order_id: 100, customer_id: 1, order_date: 2024-01-15, freight: 10}
+    expect:
+      rows:
+        - {line_id: 1, freight_allocated: 2.00}
+        - {line_id: 2, freight_allocated: 3.00}
+        - {line_id: 3, freight_allocated: 5.00}
+
+  - name: freight_allocation_gives_rounding_remainder_to_largest_line
+    description: 10 freight over three equal lines is 3.34 + 3.33 + 3.33, not 3 x 3.33.
+    model: int_order_lines__freight_allocated
+    given:
+      - input: ref('stg_shop__order_lines')
+        rows:
+          - {line_id: 1, order_id: 100, product_id: 1, amount: 1}
+          - {line_id: 2, order_id: 100, product_id: 1, amount: 1}
+          - {line_id: 3, order_id: 100, product_id: 1, amount: 1}
+      - input: ref('stg_shop__orders')
+        rows:
+          - {order_id: 100, customer_id: 1, order_date: 2024-01-15, freight: 10}
+    expect:
+      rows:
+        - {line_id: 1, freight_allocated: 3.34}
+        - {line_id: 2, freight_allocated: 3.33}
+        - {line_id: 3, freight_allocated: 3.33}
+
+  - name: scd_versions_skip_no_op_changes
+    description: A change-log row that repeats the current values is not a new version.
+    model: int_scd__customer_versions
+    given:
+      - input: ref('stg_scd__customer_changes')
+        rows:
+          - {customer_id: 1, customer_name: Acme Ltd, city: Milan, effective_date: 2024-01-01}
+          - {customer_id: 1, customer_name: Acme Ltd, city: Rome,  effective_date: 2024-03-01}
+          - {customer_id: 1, customer_name: Acme Ltd, city: Rome,  effective_date: 2024-05-01}
+    expect:
+      rows:
+        - {customer_id: 1, city: Milan, valid_from: 2024-01-01}
+        - {customer_id: 1, city: Rome,  valid_from: 2024-03-01}

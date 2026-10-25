@@ -1,0 +1,3 @@
+shipment_id,customer_id,ship_date,ship_cost
+501,1,2024-01-16,5.00
+502,1,2024-01-18,7.00

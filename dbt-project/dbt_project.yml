@@ -1,0 +1,35 @@
+name: data_modelling_basics
+version: "1.0.0"
+profile: data_modelling_basics
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+
+clean-targets: ["target", "dbt_packages"]
+
+flags:
+  send_anonymous_usage_stats: false
+
+vars:
+  # Data Vault: which source extract to load (1 or 2). See run_dbt.sh.
+  extract_no: 1
+  # SCD snapshot: the "today" of the source system when the snapshot runs.
+  scd_as_of: "9999-12-31"
+  # Kimball date dimension range.
+  date_spine_start: "2024-01-01"
+  date_spine_end: "2024-12-31"
+
+models:
+  data_modelling_basics:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table
+    raw_vault:
+      +materialized: incremental

@@ -1,0 +1,70 @@
+version: 2
+
+models:
+  - name: dim_customer
+    description: Conformed customer dimension.
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests: [unique, not_null]
+
+  - name: dim_product
+    description: Conformed product dimension.
+    columns:
+      - name: product_key
+        data_tests: [unique, not_null]
+
+  - name: dim_date
+    description: Conformed date dimension, one row per day, key yyyymmdd.
+    columns:
+      - name: date_key
+        data_tests: [unique, not_null]
+
+  - name: fact_order_line
+    description: "Grain: one row per order line. Freight is allocated, not copied."
+    columns:
+      - name: line_id
+        data_tests: [unique, not_null]
+      - name: customer_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_key
+      - name: product_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: date_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+
+  - name: fact_order
+    description: "Grain: one row per order."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+
+  - name: fact_shipment
+    description: "Grain: one row per shipment."
+    columns:
+      - name: shipment_id
+        data_tests: [unique, not_null]
+
+  - name: kimball_customer_totals
+    description: Drill-across totals per customer.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+
+  - name: kimball_monthly_totals
+    description: Drill-across totals per month.
+    columns:
+      - name: year_month
+        data_tests: [unique, not_null]

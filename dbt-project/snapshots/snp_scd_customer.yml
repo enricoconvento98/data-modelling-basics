@@ -1,0 +1,14 @@
+snapshots:
+  - name: snp_scd_customer
+    description: >
+      dbt-native SCD Type 2. Each `dbt snapshot` run compares the source
+      (stg_scd__customers_as_of) with the last snapshot and closes/opens
+      versions. run_dbt.sh runs it on three different "days".
+    relation: ref('stg_scd__customers_as_of')
+    config:
+      unique_key: customer_id
+      strategy: timestamp
+      updated_at: updated_at
+    columns:
+      - name: dbt_scd_id
+        data_tests: [unique, not_null]

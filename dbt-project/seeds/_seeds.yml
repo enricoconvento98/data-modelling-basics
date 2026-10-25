@@ -1,0 +1,29 @@
+version: 2
+
+seeds:
+  - name: shop_customers
+    description: Shop source system - customers (shared by USS and Kimball).
+  - name: shop_products
+    description: Shop source system - products. Gizmo is never sold.
+  - name: shop_orders
+    description: Shop source system - orders, with order-level freight.
+  - name: shop_order_lines
+    description: Shop source system - order lines, with line-level amount.
+  - name: shop_shipments
+    description: Shop source system - shipments, with shipment-level ship_cost.
+  - name: scd_customer_changes
+    description: >
+      Change log of customer attributes. Acme moves Milan -> Rome on 2024-03-01;
+      the 2024-05-01 Acme row is a no-op (still Rome) and must not create a version.
+  - name: scd_sales
+    description: Sales over time, before and after the customers moved.
+  - name: dv_extracts
+    description: One row per source extract, with the load timestamp used by the Data Vault.
+  - name: dv_customers
+    description: Full customer extracts. Acme moves from Milan to Rome in extract 2.
+  - name: dv_products
+    description: Full product extracts (unchanged between extracts).
+  - name: dv_orders
+    description: Full order extracts. Order 101 appears in extract 2.
+  - name: dv_order_lines
+    description: Full order line extracts. Line 1004 (Gizmo, 40) appears in extract 2.

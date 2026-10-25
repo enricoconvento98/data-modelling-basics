@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: stg_shop__customers
+    description: One row per customer.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+
+  - name: stg_shop__products
+    description: One row per product.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+
+  - name: stg_shop__orders
+    description: One row per order. freight is an order-level measure.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_shop__customers')
+                field: customer_id
+
+  - name: stg_shop__order_lines
+    description: One row per order line. amount is a line-level measure.
+    columns:
+      - name: line_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_shop__orders')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_shop__products')
+                field: product_id
+
+  - name: stg_shop__shipments
+    description: One row per shipment. ship_cost is a shipment-level measure.
+    columns:
+      - name: shipment_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_shop__customers')
+                field: customer_id

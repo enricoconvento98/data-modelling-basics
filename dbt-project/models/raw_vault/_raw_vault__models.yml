@@ -1,0 +1,113 @@
+version: 2
+
+models:
+  - name: hub_customer
+    description: Hub of customer business keys.
+    columns:
+      - name: customer_hk
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests: [unique, not_null]
+
+  - name: hub_product
+    description: Hub of product business keys.
+    columns:
+      - name: product_hk
+        data_tests: [unique, not_null]
+
+  - name: hub_order
+    description: Hub of order business keys.
+    columns:
+      - name: order_hk
+        data_tests: [unique, not_null]
+
+  - name: link_customer_order
+    description: customer places order.
+    columns:
+      - name: customer_order_hk
+        data_tests: [unique, not_null]
+      - name: customer_hk
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('hub_customer')
+                field: customer_hk
+      - name: order_hk
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('hub_order')
+                field: order_hk
+
+  - name: link_order_line
+    description: order contains product (line_id = dependent child key).
+    columns:
+      - name: order_line_hk
+        data_tests: [unique, not_null]
+      - name: order_hk
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('hub_order')
+                field: order_hk
+      - name: product_hk
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('hub_product')
+                field: product_hk
+
+  - name: sat_customer
+    description: Customer attributes with history.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination: [customer_hk, load_dts]
+      - no_consecutive_duplicates:
+          arguments:
+            partition_by: customer_hk
+            order_by: load_dts
+            column: hash_diff
+    columns:
+      - name: customer_hk
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('hub_customer')
+                field: customer_hk
+
+  - name: sat_product
+    description: Product attributes with history.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination: [product_hk, load_dts]
+      - no_consecutive_duplicates:
+          arguments:
+            partition_by: product_hk
+            order_by: load_dts
+            column: hash_diff
+
+  - name: sat_order
+    description: Order attributes with history.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination: [order_hk, load_dts]
+      - no_consecutive_duplicates:
+          arguments:
+            partition_by: order_hk
+            order_by: load_dts
+            column: hash_diff
+
+  - name: sat_order_line
+    description: Order line attributes with history.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination: [order_line_hk, load_dts]
+      - no_consecutive_duplicates:
+          arguments:
+            partition_by: order_line_hk
+            order_by: load_dts
+            column: hash_diff

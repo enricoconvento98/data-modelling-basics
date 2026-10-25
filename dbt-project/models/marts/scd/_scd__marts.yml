@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: scd_dim_customer_type1
+    description: SCD Type 1 customer dimension.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+
+  - name: scd_dim_customer_type2
+    description: SCD Type 2 customer dimension built from the change log.
+    data_tests:
+      - no_overlapping_intervals:
+          arguments:
+            partition_by: customer_id
+            valid_from: valid_from
+            valid_to: valid_to
+    columns:
+      - name: customer_sk
+        data_tests: [unique, not_null]
+
+  - name: scd_dim_customer_type6
+    description: SCD Type 6 = Type 2 + current_city on every version.
+    columns:
+      - name: customer_sk
+        data_tests: [unique, not_null]
+
+  - name: scd_fact_sales
+    description: Sales with the surrogate key of the version valid on the sale date.
+    columns:
+      - name: sale_id
+        data_tests: [unique, not_null]
+      - name: customer_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('scd_dim_customer_type2')
+                field: customer_sk
+
+  - name: scd_sales_by_city
+    description: Sales by historical city and by current city.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination: [perspective, city]
