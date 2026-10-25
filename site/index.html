@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Visual guide to the Unified Star Schema, Kimball star schema, slowly changing dimensions and Data Vault 2.0, using one small shop dataset.">
+<title>Data Modelling Schema Atlas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single reading column with a sticky topic bar; each topic is a "plate" of diagram + example rows + the one rule to remember. */
+:root {
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --fg: #1c2328;
+  --muted: #5a6872;
+  --line: #d9dee2;
+  --accent: #1f5f8b;
+  --accent-soft: #e3eef6;
+  --good: #2c7a4b;
+  --good-soft: #e3f3e9;
+  --bad: #b03a2e;
+  --bad-soft: #f8e5e2;
+  --role-fact: #8a5a00;  --role-fact-bg: #fbf0d9;
+  --role-dim: #1f5f8b;   --role-dim-bg: #e3eef6;
+  --role-hub: #5b3f99;   --role-hub-bg: #ece6f7;
+  --role-link: #2c7a4b;  --role-link-bg: #e3f3e9;
+  --role-sat: #8a3d5c;   --role-sat-bg: #f6e4ec;
+  --font-display: "Literata", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --surface: #192026; --fg: #e4e9ec; --muted: #9aa7b0; --line: #2c363e;
+    --accent: #7cb7e0; --accent-soft: #1b2e3c;
+    --good: #7fcf9c; --good-soft: #17301f; --bad: #f0907f; --bad-soft: #3a1d18;
+    --role-fact: #f0c46a; --role-fact-bg: #3a2d10;
+    --role-dim: #7cb7e0;  --role-dim-bg: #1b2e3c;
+    --role-hub: #b9a2ee;  --role-hub-bg: #2b2244;
+    --role-link: #7fcf9c; --role-link-bg: #17301f;
+    --role-sat: #ea9cbd;  --role-sat-bg: #3a1c29;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --surface: #192026; --fg: #e4e9ec; --muted: #9aa7b0; --line: #2c363e;
+  --accent: #7cb7e0; --accent-soft: #1b2e3c;
+  --good: #7fcf9c; --good-soft: #17301f; --bad: #f0907f; --bad-soft: #3a1d18;
+  --role-fact: #f0c46a; --role-fact-bg: #3a2d10;
+  --role-dim: #7cb7e0;  --role-dim-bg: #1b2e3c;
+  --role-hub: #b9a2ee;  --role-hub-bg: #2b2244;
+  --role-link: #7fcf9c; --role-link-bg: #17301f;
+  --role-sat: #ea9cbd;  --role-sat-bg: #3a1c29;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 980px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+header.intro { padding-block: 40px 24px; }
+header.intro .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 650; font-size: clamp(30px, 5vw, 44px); line-height: 1.15; margin: 8px 0 12px; text-wrap: balance; }
+header.intro p { max-width: 65ch; color: var(--muted); margin: 0; }
+
+nav.topics { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+nav.topics .wrap { display: flex; gap: 4px; overflow-x: auto; padding-block: 8px; }
+@media (min-width: 760px) { nav.topics .wrap { flex-wrap: wrap; overflow-x: visible; } }
+nav.topics a { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; color: var(--fg); text-decoration: none; padding: 6px 12px; border-radius: 6px; }
+nav.topics a:hover, nav.topics a:focus-visible { background: var(--accent-soft); color: var(--accent); outline: none; }
+nav.topics a .n { color: var(--muted); margin-right: 6px; }
+
+section.topic { padding-block: 48px 8px; border-bottom: 1px solid var(--line); scroll-margin-top: 64px; }
+section.topic:last-of-type { border-bottom: 0; }
+.topic-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.topic-head .num { font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+h2 { font-family: var(--font-display); font-weight: 650; font-size: clamp(24px, 3.6vw, 32px); line-height: 1.2; margin: 0; text-wrap: balance; }
+.topic-head .who { font-size: 14px; color: var(--muted); width: 100%; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 20px; margin: 32px 0 8px; text-wrap: balance; }
+p { max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+
+.rule { margin: 20px 0 8px; padding: 14px 18px; background: var(--accent-soft); border-radius: 8px; max-width: 68ch; }
+.rule b { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+
+.figure { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; }
+.figure pre.mermaid { margin: 0; background: transparent; display: flex; justify-content: center; min-width: min-content; }
+.caption { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.two > * { min-width: 0; }
+
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--font-mono); font-weight: 600; font-size: 12px; color: var(--muted); background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; }
+td.null { color: var(--line); }
+tr.total td { font-weight: 600; border-top: 2px solid var(--line); }
+.bad { color: var(--bad); font-weight: 600; }
+.good { color: var(--good); font-weight: 600; }
+td.hl { background: var(--accent-soft); }
+
+.chip { display: inline-block; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .04em; padding: 1px 7px; border-radius: 4px; vertical-align: 1px; }
+.chip.fact { color: var(--role-fact); background: var(--role-fact-bg); }
+.chip.dim  { color: var(--role-dim);  background: var(--role-dim-bg); }
+.chip.hub  { color: var(--role-hub);  background: var(--role-hub-bg); }
+.chip.link { color: var(--role-link); background: var(--role-link-bg); }
+.chip.sat  { color: var(--role-sat);  background: var(--role-sat-bg); }
+.chip.bridge { color: var(--accent); background: var(--accent-soft); }
+
+.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+.verdict > div { padding: 12px 14px; border-radius: 8px; min-width: 0; }
+.verdict .no { background: var(--bad-soft); }
+.verdict .yes { background: var(--good-soft); }
+.verdict .k { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.verdict .no .k { color: var(--bad); }
+.verdict .yes .k { color: var(--good); }
+.verdict .v { font-family: var(--font-mono); font-size: 14px; margin-top: 4px; }
+
+pre.sql { font-family: var(--font-mono); font-size: 13px; line-height: 1.55; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0; }
+pre.sql .c { color: var(--muted); }
+pre.sql .k { color: var(--accent); font-weight: 600; }
+
+footer { padding-block: 40px; color: var(--muted); font-size: 14px; }
+footer a { color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+<style>
+/* Standalone page: the reset the artifact host used to provide. */
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { color-scheme: dark; } }
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+img { max-width: 100%; }
+</style>
+</head>
+<body>
+
+
+<header class="wrap intro">
+  <div class="eyebrow">data-modelling-basics</div>
+  <h1>Data Modelling Schema Atlas</h1>
+  <p>The four schemas from the repo, drawn out with the same tiny shop: one customer, one order with freight 10, three lines worth 100, two shipments costing 12, and a product nobody bought. Every pattern exists to get those three totals right.</p>
+</header>
+
+<nav class="topics" aria-label="Topics">
+  <div class="wrap">
+    <a href="#uss"><span class="n">1</span>Unified Star Schema</a>
+    <a href="#kimball"><span class="n">2</span>Kimball Star</a>
+    <a href="#scd"><span class="n">3</span>Slowly Changing Dimensions</a>
+    <a href="#vault"><span class="n">4</span>Data Vault 2.0</a>
+    <a href="#compare">Compare</a>
+    <a href="dbt-docs/">dbt docs ↗</a>
+    <a href="https://github.com/enricoconvento98/data-modelling-basics">GitHub ↗</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ====================================================== USS -->
+<section class="topic" id="uss">
+  <div class="topic-head"><span class="num">TOPIC 1</span><h2>Unified Star Schema</h2><span class="who">Francesco Puppini &amp; Bill Inmon, 2020</span></div>
+
+  <h3>The source model</h3>
+  <p>A normal, normalised shop database. Each measure lives at its own level: <code>freight</code> per order, <code>amount</code> per line, <code>ship_cost</code> per shipment.</p>
+  <div class="figure">
+<pre class="mermaid">
+erDiagram
+    customers ||--o{ orders : places
+    customers ||--o{ shipments : receives
+    orders ||--|{ order_lines : contains
+    products ||--o{ order_lines : "sold as"
+    customers {
+        int customer_id PK
+        varchar customer_name
+    }
+    orders {
+        int order_id PK
+        int customer_id FK
+        decimal freight
+    }
+    order_lines {
+        int line_id PK
+        int order_id FK
+        int product_id FK
+        decimal amount
+    }
+    products {
+        int product_id PK
+        varchar product_name
+    }
+    shipments {
+        int shipment_id PK
+        int customer_id FK
+        decimal ship_cost
+    }
+</pre>
+  </div>
+
+  <h3>Why plain joins go wrong</h3>
+  <div class="two">
+    <div>
+      <p><b>Fan trap.</b> Joining <code>orders → order_lines</code> repeats the order once per line, so its freight is summed three times.</p>
+      <div class="tbl"><table>
+        <tr><th>order</th><th class="num">freight</th><th>line</th><th class="num">amount</th></tr>
+        <tr><td>100</td><td class="num">10</td><td>1001</td><td class="num">20</td></tr>
+        <tr><td>100</td><td class="num">10</td><td>1002</td><td class="num">30</td></tr>
+        <tr><td>100</td><td class="num">10</td><td>1003</td><td class="num">50</td></tr>
+        <tr class="total"><td>sum</td><td class="num bad">30</td><td></td><td class="num good">100</td></tr>
+      </table></div>
+    </div>
+    <div>
+      <p><b>Chasm trap.</b> Orders and shipments both hang off the customer but are unrelated, so the join pairs every order with every shipment.</p>
+      <div class="tbl"><table>
+        <tr><th>customer</th><th>order</th><th class="num">freight</th><th>shipment</th><th class="num">ship_cost</th></tr>
+        <tr><td>Acme</td><td>100</td><td class="num">10</td><td>501</td><td class="num">5</td></tr>
+        <tr><td>Acme</td><td>100</td><td class="num">10</td><td>502</td><td class="num">7</td></tr>
+        <tr class="total"><td>sum</td><td></td><td class="num bad">20</td><td></td><td class="num">12</td></tr>
+      </table></div>
+    </div>
+  </div>
+  <p class="caption">Join all four tables at once and you get 3 × 2 = 6 rows: freight 60, amount 200, ship_cost 36.</p>
+
+  <h3>The USS star: everything joins only to the bridge</h3>
+  <div class="figure">
+<pre class="mermaid">
+flowchart LR
+    C["customers"]
+    O["orders"]
+    L["order_lines"]
+    B(("_bridge"))
+    P["products"]
+    S["shipments"]
+    B -- "_key_customer" --> C
+    B -- "_key_order" --> O
+    B -- "_key_line" --> L
+    B -- "_key_product" --> P
+    B -- "_key_shipment" --> S
+</pre>
+  </div>
+  <p class="caption">Every query is <code>FROM _bridge LEFT JOIN table ON table.id = _bridge._key_table</code>. No table is ever joined to another table.</p>
+
+  <h3>How the bridge is built</h3>
+  <p>A <code>UNION ALL</code> of one <b>stage</b> per table. Each row carries its own key, every key reachable through many-to-one links, and only its own measures.</p>
+  <div class="tbl"><table>
+    <tr><th>stage</th><th>own key</th><th>keys reached via many-to-one</th><th>measure</th></tr>
+    <tr><td class="mono">customers</td><td class="mono">_key_customer</td><td class="null">none</td><td class="null">none</td></tr>
+    <tr><td class="mono">orders</td><td class="mono">_key_order</td><td class="mono">_key_customer</td><td class="mono">freight</td></tr>
+    <tr><td class="mono">order_lines</td><td class="mono">_key_line</td><td class="mono">_key_order, _key_customer, _key_product</td><td class="mono">amount</td></tr>
+    <tr><td class="mono">products</td><td class="mono">_key_product</td><td class="null">none</td><td class="null">none</td></tr>
+    <tr><td class="mono">shipments</td><td class="mono">_key_shipment</td><td class="mono">_key_customer</td><td class="mono">ship_cost</td></tr>
+  </table></div>
+
+  <h3>The bridge rows</h3>
+  <div class="tbl"><table>
+    <tr><th>stage</th><th class="num">_key_customer</th><th class="num">_key_order</th><th class="num">_key_line</th><th class="num">_key_product</th><th class="num">_key_shipment</th><th class="num">freight</th><th class="num">amount</th><th class="num">ship_cost</th></tr>
+    <tr><td>customers</td><td class="num">1</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>orders</td><td class="num">1</td><td class="num">100</td><td></td><td></td><td></td><td class="num hl">10</td><td></td><td></td></tr>
+    <tr><td>order_lines</td><td class="num">1</td><td class="num">100</td><td class="num">1001</td><td class="num">1</td><td></td><td></td><td class="num hl">20</td><td></td></tr>
+    <tr><td>order_lines</td><td class="num">1</td><td class="num">100</td><td class="num">1002</td><td class="num">2</td><td></td><td></td><td class="num hl">30</td><td></td></tr>
+    <tr><td>order_lines</td><td class="num">1</td><td class="num">100</td><td class="num">1003</td><td class="num">1</td><td></td><td></td><td class="num hl">50</td><td></td></tr>
+    <tr><td>products</td><td></td><td></td><td></td><td class="num">1</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>products</td><td></td><td></td><td></td><td class="num">2</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>products</td><td></td><td></td><td></td><td class="num">3</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>shipments</td><td class="num">1</td><td></td><td></td><td></td><td class="num">501</td><td></td><td></td><td class="num hl">5</td></tr>
+    <tr><td>shipments</td><td class="num">1</td><td></td><td></td><td></td><td class="num">502</td><td></td><td></td><td class="num hl">7</td></tr>
+    <tr class="total"><td>sum</td><td></td><td></td><td></td><td></td><td></td><td class="num good">10</td><td class="num good">100</td><td class="num good">12</td></tr>
+  </table></div>
+  <p class="caption">Product 3 (Gizmo) appears only on the products stage, with no line key: that is how "products never sold" is found.</p>
+
+  <div class="rule"><b>Remember</b>Each measure appears on exactly one row per source row, and the tables only add descriptions to bridge rows. Nothing can be counted twice.</div>
+</section>
+
+<!-- ====================================================== KIMBALL -->
+<section class="topic" id="kimball">
+  <div class="topic-head"><span class="num">TOPIC 2</span><h2>Kimball Star Schema</h2><span class="who">Ralph Kimball, The Data Warehouse Toolkit</span></div>
+
+  <p>Measurements go into <span class="chip fact">FACT</span> tables, context into <span class="chip dim">DIM</span> tables. The first decision is the <b>grain</b>: what one fact row means. Same shop, three grains, three fact tables sharing three dimensions.</p>
+  <div class="figure">
+<pre class="mermaid">
+erDiagram
+    dim_customer ||--o{ fact_order_line : ""
+    dim_product ||--o{ fact_order_line : ""
+    dim_date ||--o{ fact_order_line : "order date"
+    dim_customer ||--o{ fact_order : ""
+    dim_date ||--o{ fact_order : "order date"
+    dim_customer ||--o{ fact_shipment : ""
+    dim_date ||--o{ fact_shipment : "ship date"
+    fact_order_line {
+        int date_key FK
+        int customer_key FK
+        int product_key FK
+        int order_id "degenerate"
+        decimal amount
+        decimal freight_allocated
+    }
+    fact_order {
+        int date_key FK
+        int customer_key FK
+        int order_id "degenerate"
+        decimal freight
+    }
+    fact_shipment {
+        int date_key FK
+        int customer_key FK
+        int shipment_id "degenerate"
+        decimal ship_cost
+    }
+    dim_customer {
+        int customer_key PK
+        int customer_id "natural key"
+        varchar customer_name
+    }
+    dim_product {
+        int product_key PK
+        int product_id "natural key"
+        varchar product_name
+    }
+    dim_date {
+        int date_key PK "yyyymmdd"
+        date full_date
+        varchar year_month
+    }
+</pre>
+  </div>
+
+  <h3>Grain fixes the fan trap</h3>
+  <div class="two">
+    <div class="tbl"><table>
+      <tr><th>fact table</th><th>one row per</th><th>measures</th></tr>
+      <tr><td class="mono">fact_order_line</td><td>order line</td><td class="mono">amount, freight_allocated</td></tr>
+      <tr><td class="mono">fact_order</td><td>order</td><td class="mono">freight</td></tr>
+      <tr><td class="mono">fact_shipment</td><td>shipment</td><td class="mono">ship_cost</td></tr>
+    </table></div>
+    <div class="tbl"><table>
+      <tr><th>line</th><th class="num">amount</th><th class="num">freight_allocated</th></tr>
+      <tr><td>1001</td><td class="num">20</td><td class="num">10 × 20/100 = 2</td></tr>
+      <tr><td>1002</td><td class="num">30</td><td class="num">10 × 30/100 = 3</td></tr>
+      <tr><td>1003</td><td class="num">50</td><td class="num">10 × 50/100 = 5</td></tr>
+      <tr class="total"><td>sum</td><td class="num good">100</td><td class="num good">10</td></tr>
+    </table></div>
+  </div>
+  <p class="caption">Either keep freight at order grain in its own fact table, or split it down to the lines with an agreed rule (here, in proportion to amount).</p>
+
+  <h3>Drill-across fixes the chasm trap</h3>
+  <p>Never join two fact tables to each other. Sum each one separately to the shared dimension, then join the small results.</p>
+<pre class="sql"><span class="k">WITH</span> lines <span class="k">AS</span> (<span class="k">SELECT</span> customer_key, SUM(amount)    amount    <span class="k">FROM</span> fact_order_line <span class="k">GROUP BY</span> 1),
+     ords  <span class="k">AS</span> (<span class="k">SELECT</span> customer_key, SUM(freight)   freight   <span class="k">FROM</span> fact_order      <span class="k">GROUP BY</span> 1),
+     ships <span class="k">AS</span> (<span class="k">SELECT</span> customer_key, SUM(ship_cost) ship_cost <span class="k">FROM</span> fact_shipment   <span class="k">GROUP BY</span> 1)
+<span class="k">SELECT</span> c.customer_name, o.freight, l.amount, s.ship_cost   <span class="c">-- 10, 100, 12</span>
+<span class="k">FROM</span> dim_customer c
+<span class="k">LEFT JOIN</span> lines l <span class="k">USING</span> (customer_key)
+<span class="k">LEFT JOIN</span> ords  o <span class="k">USING</span> (customer_key)
+<span class="k">LEFT JOIN</span> ships s <span class="k">USING</span> (customer_key);</pre>
+  <div class="verdict">
+    <div class="no"><div class="k">fact_order_line JOIN fact_shipment</div><div class="v">amount 200 · ship_cost 36</div></div>
+    <div class="yes"><div class="k">drill-across</div><div class="v">freight 10 · amount 100 · ship_cost 12</div></div>
+  </div>
+
+  <h3>Bus matrix</h3>
+  <p>Business processes against the <b>conformed</b> dimensions they share. Shared dimensions are what make drill-across possible.</p>
+  <div class="tbl"><table>
+    <tr><th>process</th><th>customer</th><th>product</th><th>date</th></tr>
+    <tr><td>Order lines</td><td>✔</td><td>✔</td><td>✔ order date</td></tr>
+    <tr><td>Orders</td><td>✔</td><td></td><td>✔ order date</td></tr>
+    <tr><td>Shipments</td><td>✔</td><td></td><td>✔ ship date</td></tr>
+  </table></div>
+
+  <div class="rule"><b>Remember</b>One grain per fact table, and never join fact to fact. Sum each fact separately, then combine.</div>
+</section>
+
+<!-- ====================================================== SCD -->
+<section class="topic" id="scd">
+  <div class="topic-head"><span class="num">TOPIC 3</span><h2>Slowly Changing Dimensions</h2><span class="who">How a dimension keeps (or loses) history</span></div>
+
+  <p>Acme Ltd starts in Milan and moves to Rome on 1 March 2024. Sales: Acme 100 on 20 Jan, Beta Srl (Turin) 70 on 10 Feb, Acme 50 on 5 Apr. Which city gets the January sale?</p>
+
+  <h3>Type 1 vs. Type 2</h3>
+  <div class="two">
+    <div>
+      <p><b>Type 1: overwrite.</b> One row per customer, latest values only.</p>
+      <div class="tbl"><table>
+        <tr><th>customer_id</th><th>city</th></tr>
+        <tr><td>1 Acme</td><td>Rome</td></tr>
+        <tr><td>2 Beta</td><td>Turin</td></tr>
+      </table></div>
+      <p class="caption">Sales by city: Rome 150, Turin 70. The January sale moved to Rome.</p>
+    </div>
+    <div>
+      <p><b>Type 2: add a row per version.</b> Each version gets its own surrogate key and validity dates.</p>
+      <div class="tbl"><table>
+        <tr><th class="num">sk</th><th>id</th><th>city</th><th>valid_from</th><th>valid_to</th><th>current</th></tr>
+        <tr><td class="num">1</td><td>1</td><td>Milan</td><td>2024-01-01</td><td>2024-03-01</td><td>no</td></tr>
+        <tr><td class="num">2</td><td>1</td><td>Rome</td><td>2024-03-01</td><td>9999-12-31</td><td>yes</td></tr>
+        <tr><td class="num">3</td><td>2</td><td>Turin</td><td>2024-01-01</td><td>9999-12-31</td><td>yes</td></tr>
+      </table></div>
+      <p class="caption">Sales by city: Milan 100, Rome 50, Turin 70. History as it was.</p>
+    </div>
+  </div>
+
+  <h3>Facts point to the version that was valid on the day</h3>
+  <div class="figure">
+<pre class="mermaid">
+flowchart LR
+    S1["sale 1 · 2024-01-20 · 100"] --> V1["sk 1 · Acme · Milan"]
+    S3["sale 3 · 2024-04-05 · 50"] --> V2["sk 2 · Acme · Rome"]
+    S2["sale 2 · 2024-02-10 · 70"] --> V3["sk 3 · Beta · Turin"]
+</pre>
+  </div>
+  <p class="caption">The lookup runs once, at load: <code>sale_date &gt;= valid_from AND sale_date &lt; valid_to</code>.</p>
+
+  <h3>Type 6: historical and current side by side</h3>
+  <div class="two">
+    <div class="tbl"><table>
+      <tr><th class="num">sk</th><th>city (then)</th><th>current_city</th></tr>
+      <tr><td class="num">1</td><td>Milan</td><td>Rome</td></tr>
+      <tr><td class="num">2</td><td>Rome</td><td>Rome</td></tr>
+      <tr><td class="num">3</td><td>Turin</td><td>Turin</td></tr>
+    </table></div>
+    <div class="tbl"><table>
+      <tr><th>group by</th><th>result</th></tr>
+      <tr><td class="mono">city</td><td>Milan 100 · Rome 50 · Turin 70</td></tr>
+      <tr><td class="mono">current_city</td><td>Rome 150 · Turin 70</td></tr>
+    </table></div>
+  </div>
+
+  <h3>All the types</h3>
+  <div class="tbl"><table>
+    <tr><th>type</th><th>what happens on change</th><th>history</th><th>use it for</th></tr>
+    <tr><td>0</td><td>ignore the change</td><td>original value only</td><td>date of birth, original score</td></tr>
+    <tr><td>1</td><td>overwrite</td><td>none</td><td>typo fixes, attributes nobody trends</td></tr>
+    <tr><td>2</td><td>expire old row, insert new</td><td>full</td><td>region, segment, anything reported over time</td></tr>
+    <tr><td>3</td><td>keep previous value in a column</td><td>one step</td><td>before/after a reorganisation</td></tr>
+    <tr><td>6</td><td>type 2 rows + current value on every row</td><td>full + current</td><td>users who need "as was" and "as is"</td></tr>
+  </table></div>
+
+  <div class="rule"><b>Remember</b>Join facts to a Type 2 dimension on the surrogate key. Joining on the natural key repeats each sale once per version, which is the fan trap again.</div>
+</section>
+
+<!-- ====================================================== DATA VAULT -->
+<section class="topic" id="vault">
+  <div class="topic-head"><span class="num">TOPIC 4</span><h2>Data Vault 2.0</h2><span class="who">Dan Linstedt · the integration layer, beneath the stars</span></div>
+
+  <p>Every source table is split into three kinds of table, and all of them are insert-only.</p>
+  <div class="tbl"><table>
+    <tr><th>role</th><th>holds</th><th>gets a new row when</th></tr>
+    <tr><td><span class="chip hub">HUB</span></td><td>unique business keys (customer, order, product)</td><td>a new key appears</td></tr>
+    <tr><td><span class="chip link">LINK</span></td><td>unique relationships between hubs</td><td>a new relationship appears</td></tr>
+    <tr><td><span class="chip sat">SAT</span></td><td>descriptive attributes, with history</td><td>an attribute value changes</td></tr>
+  </table></div>
+
+  <h3>One source table becomes three</h3>
+  <div class="figure">
+<pre class="mermaid">
+flowchart LR
+    SRC["orders (source): order_id, customer_id, order_date, freight"]
+    H["hub_order: order_id"]
+    L["link_customer_order: customer, order"]
+    S["sat_order: order_date, freight"]
+    SRC -- "business key" --> H
+    SRC -- "foreign key" --> L
+    SRC -- "attributes" --> S
+</pre>
+  </div>
+
+  <h3>The raw vault</h3>
+  <div class="figure">
+<pre class="mermaid">
+erDiagram
+    hub_customer ||--o{ link_customer_order : ""
+    hub_order ||--o{ link_customer_order : ""
+    hub_order ||--o{ link_order_line : ""
+    hub_product ||--o{ link_order_line : ""
+    hub_customer ||--o{ sat_customer : ""
+    hub_order ||--o{ sat_order : ""
+    hub_product ||--o{ sat_product : ""
+    link_order_line ||--o{ sat_order_line : ""
+    hub_customer {
+        char32 customer_hk PK
+        int customer_id "business key"
+        timestamp load_dts
+        varchar record_source
+    }
+    hub_order {
+        char32 order_hk PK
+        int order_id "business key"
+    }
+    hub_product {
+        char32 product_hk PK
+        int product_id "business key"
+    }
+    link_customer_order {
+        char32 customer_order_hk PK
+        char32 customer_hk FK
+        char32 order_hk FK
+    }
+    link_order_line {
+        char32 order_line_hk PK
+        char32 order_hk FK
+        char32 product_hk FK
+        int line_id
+    }
+    sat_customer {
+        char32 customer_hk PK
+        timestamp load_dts PK
+        char32 hash_diff
+        varchar city
+    }
+    sat_order {
+        char32 order_hk PK
+        timestamp load_dts PK
+        decimal freight
+    }
+    sat_product {
+        char32 product_hk PK
+        timestamp load_dts PK
+        varchar product_name
+    }
+    sat_order_line {
+        char32 order_line_hk PK
+        timestamp load_dts PK
+        decimal amount
+    }
+</pre>
+  </div>
+  <p class="caption"><code>*_hk</code> is <code>MD5(business key)</code>, so every table can be loaded in parallel. <code>hash_diff</code> is <code>MD5(all attributes)</code>: a satellite row is added only when it changes.</p>
+
+  <h3>Three loads, row counts after each</h3>
+  <div class="tbl"><table>
+    <tr><th>run</th><th class="num"><span class="chip hub">HUB</span> customer</th><th class="num"><span class="chip hub">HUB</span> order</th><th class="num"><span class="chip link">LINK</span> cust-order</th><th class="num"><span class="chip link">LINK</span> line</th><th class="num"><span class="chip sat">SAT</span> customer</th><th class="num"><span class="chip sat">SAT</span> order</th><th class="num"><span class="chip sat">SAT</span> line</th></tr>
+    <tr><td>load 1 (Acme in Milan, order 100)</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">3</td><td class="num">1</td><td class="num">1</td><td class="num">3</td></tr>
+    <tr><td>load 1 again</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">3</td><td class="num">1</td><td class="num">1</td><td class="num">3</td></tr>
+    <tr><td>load 2 (moved to Rome, order 101)</td><td class="num">1</td><td class="num hl">2</td><td class="num hl">2</td><td class="num hl">4</td><td class="num hl">2</td><td class="num hl">2</td><td class="num hl">4</td></tr>
+  </table></div>
+
+  <h3>History comes for free</h3>
+  <div class="tbl"><table>
+    <tr><th>customer_id</th><th>city</th><th>load_dts (valid_from)</th><th>valid_to (derived with LEAD)</th></tr>
+    <tr><td>1</td><td>Milan</td><td>2024-01-31</td><td>2024-02-29</td></tr>
+    <tr><td>1</td><td>Rome</td><td>2024-02-29</td><td></td></tr>
+  </table></div>
+  <p class="caption">The satellite already works like a Type 2 dimension. Users query information-mart views built on top (freight 15, amount 140 after both loads), not the raw vault.</p>
+
+  <div class="rule"><b>Remember</b>Keys in hubs, relationships in links, everything descriptive in satellites. Insert only, so any past state can be rebuilt.</div>
+</section>
+
+<!-- ====================================================== COMPARE -->
+<section class="topic" id="compare">
+  <div class="topic-head"><span class="num">SUMMARY</span><h2>How they compare</h2></div>
+  <div class="tbl" style="margin-top:16px"><table>
+    <tr><th></th><th>Unified Star Schema</th><th>Kimball star</th><th>Data Vault 2.0</th></tr>
+    <tr><td>Layer</td><td>presentation</td><td>presentation</td><td>integration (raw history)</td></tr>
+    <tr><td>Shape</td><td>one <span class="chip bridge">BRIDGE</span> in the centre</td><td>one star per process</td><td><span class="chip hub">HUB</span> <span class="chip link">LINK</span> <span class="chip sat">SAT</span> network</td></tr>
+    <tr><td>Fan trap</td><td>prevented by construction</td><td>prevented by grain design</td><td>handled in the marts</td></tr>
+    <tr><td>Chasm trap</td><td>prevented by construction</td><td>drill-across at query time</td><td>handled in the marts</td></tr>
+    <tr><td>History</td><td>whatever the tables hold</td><td>SCD types on dimensions</td><td>every change, automatically</td></tr>
+    <tr><td>Main cost</td><td>wide, long bridge</td><td>design effort per process</td><td>many tables and joins</td></tr>
+    <tr><td>Who queries it</td><td>analysts, BI tools</td><td>analysts, BI tools</td><td>engineers building marts</td></tr>
+  </table></div>
+</section>
+
+</main>
+
+<footer class="wrap">Runnable SQL for every diagram is in the <a href="https://github.com/enricoconvento98/data-modelling-basics">data-modelling-basics</a> repo (DuckDB and PostgreSQL). The same models as a tested dbt pipeline: <a href="dbt-docs/">dbt docs and lineage graph</a>.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default",
+    er: { useMaxWidth: false },
+    flowchart: { useMaxWidth: false }
+  });
+</script>
+</body>
+</html>

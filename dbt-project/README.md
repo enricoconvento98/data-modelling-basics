@@ -159,3 +159,7 @@ dbt show --select chasm_trap --profiles-dir .   # 60 / 200 / 36 instead of 10 / 
   service container.
 - **dbt**: `./run_dbt.sh`, then `dbt docs generate`; the docs site is uploaded
   as the `dbt-docs` build artifact.
+
+On every push to `main`, [`pages.yml`](../.github/workflows/pages.yml) builds
+and tests the project again and publishes the docs at
+<https://enricoconvento98.github.io/data-modelling-basics/dbt-docs/>.
