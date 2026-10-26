@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: stg_dv__customers
+    description: Customer extract var('extract_no') with hash key and hash diff.
+    columns:
+      - name: customer_hk
+        data_tests: [unique, not_null]
+  - name: stg_dv__products
+    description: Product extract var('extract_no') with hash key and hash diff.
+    columns:
+      - name: product_hk
+        data_tests: [unique, not_null]
+  - name: stg_dv__orders
+    description: Order extract var('extract_no') with hub, link hash keys and hash diff.
+    columns:
+      - name: order_hk
+        data_tests: [unique, not_null]
+  - name: stg_dv__order_lines
+    description: Order line extract var('extract_no') with link hash key and hash diff.
+    columns:
+      - name: order_line_hk
+        data_tests: [unique, not_null]

@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: dv_dim_customer
+    description: Current customer state from the raw vault.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: dv_dim_product
+    description: Current product state from the raw vault.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+  - name: dv_fact_order
+    description: "Grain: one row per order."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+  - name: dv_fact_order_line
+    description: "Grain: one row per order line."
+    columns:
+      - name: line_id
+        data_tests: [unique, not_null]
+  - name: dv_customer_totals
+    description: freight and amount per customer.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: dv_customer_history
+    description: Every version of every customer, with derived valid_to.
+    data_tests:
+      - no_overlapping_intervals:
+          arguments:
+            partition_by: customer_id
+            valid_from: valid_from
+            valid_to: valid_to

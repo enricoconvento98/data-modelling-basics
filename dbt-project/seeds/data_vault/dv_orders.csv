@@ -1,0 +1,4 @@
+extract_no,order_id,customer_id,order_date,freight
+1,100,1,2024-01-15,10.00
+2,100,1,2024-01-15,10.00
+2,101,1,2024-02-10,5.00

@@ -1,0 +1,7 @@
+customer_id,customer_name,city,effective_date
+1,Acme Ltd,Milan,2024-01-01
+2,Beta Srl,Turin,2024-01-01
+1,Acme Ltd,Rome,2024-03-01
+1,Acme Ltd,Rome,2024-05-01
+2,Beta Srl,Florence,2024-05-01
+3,Gamma SpA,Naples,2024-05-01

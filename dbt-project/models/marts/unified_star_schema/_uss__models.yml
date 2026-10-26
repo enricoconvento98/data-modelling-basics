@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: uss_bridge
+    description: The Puppini Bridge (built as table "_bridge").
+    columns:
+      - name: stage
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [customers, orders, order_lines, products, shipments]
+      - name: _key_customer
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_shop__customers')
+                field: customer_id
+      - name: _key_product
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_shop__products')
+                field: product_id
+
+  - name: uss_customer_totals
+    description: freight, amount and ship_cost per customer via the bridge.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+
+  - name: uss_product_totals
+    description: amount per product via the bridge; non-product measures on the NULL row.
+
+  - name: uss_products_never_sold
+    description: Products with no order line.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]

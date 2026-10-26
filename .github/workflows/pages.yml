@@ -1,0 +1,64 @@
+name: Deploy site
+
+# Publishes the GitHub Pages site:
+#   /            site/index.html (the schema atlas)
+#   /dbt-docs/   dbt docs with the lineage graph, generated from a full, tested build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: dbt-project/requirements.txt
+
+      - name: Install dbt
+        run: pip install -r dbt-project/requirements.txt
+
+      - name: Build and test the dbt project
+        working-directory: dbt-project
+        run: ./run_dbt.sh
+
+      - name: Generate static dbt docs
+        working-directory: dbt-project
+        run: |
+          dbt docs generate --static --profiles-dir . --vars '{extract_no: 2, scd_as_of: "2024-06-01"}'
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site/dbt-docs
+          cp -r site/. _site/
+          cp dbt-project/target/static_index.html _site/dbt-docs/index.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
