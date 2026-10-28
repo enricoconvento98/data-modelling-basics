@@ -1,0 +1,121 @@
+/*
+  Mobile layout for the static dbt docs site.
+  dbt docs sets `.app { min-width: 960px }` and puts a fixed 300px model tree
+  next to the content, so on a phone the content is pushed off-screen.
+  Below 960px: the content takes the full width, the model tree becomes a
+  slide-out drawer opened by a "Models" button, and wide content scrolls
+  inside its own box instead of being cut off.
+*/
+.mdl-menu-btn,
+.mdl-backdrop {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .app {
+    min-width: 0 !important;
+  }
+
+  /* Model tree as a drawer */
+  .app > .app-menu {
+    position: fixed !important;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(320px, 85vw) !important;
+    z-index: 1001;
+    background: #f9fafb;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.25);
+    transform: translateX(-105%);
+    transition: transform 0.2s ease;
+  }
+  body.mdl-menu-open .app > .app-menu {
+    transform: none;
+  }
+  .mdl-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.35);
+  }
+  body.mdl-menu-open .mdl-backdrop {
+    display: block;
+  }
+
+  /* Content takes the whole screen */
+  .app > .app-content {
+    width: 100%;
+    min-width: 0;
+  }
+  .app-content .app-frame {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    gap: 8px;
+  }
+  .app-content .app-pad,
+  .app-content .app-details,
+  .app-content .app-title,
+  .app-content .app-links {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* "Models" button in the search bar */
+  .mdl-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #d6dbe0;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #262a38;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mdl-menu-btn:focus-visible {
+    outline: 2px solid #ff694b;
+    outline-offset: 2px;
+  }
+  .mdl-menu-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Model details (tags, owner, type, ...) wrap instead of scrolling sideways */
+  .app-details .detail-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    overflow-x: visible !important;
+    white-space: normal;
+  }
+  .app-details .detail-body .detail {
+    margin: 0 !important;
+    max-width: 100%;
+  }
+  .app-details .detail-body .detail-value {
+    overflow-wrap: anywhere;
+  }
+
+  /* Wide content scrolls inside its own box */
+  .app-details table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .app-details pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* Lineage graph panel uses the full screen */
+  .launcher-content {
+    width: 100vw !important;
+    border-width: 8px !important;
+  }
+}

@@ -45,7 +45,8 @@ jobs:
         run: |
           mkdir -p _site/dbt-docs
           cp -r site/. _site/
-          cp dbt-project/target/static_index.html _site/dbt-docs/index.html
+          # dbt docs has no mobile layout: inline a responsive stylesheet + drawer menu
+          python dbt-project/docs_mobile/inject.py dbt-project/target/static_index.html _site/dbt-docs/index.html
 
       - uses: actions/configure-pages@v5
 
