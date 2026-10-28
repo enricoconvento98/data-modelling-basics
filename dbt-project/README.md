@@ -163,3 +163,8 @@ dbt show --select chasm_trap --profiles-dir .   # 60 / 200 / 36 instead of 10 / 
 On every push to `main`, [`pages.yml`](../.github/workflows/pages.yml) builds
 and tests the project again and publishes the docs at
 <https://enricoconvento98.github.io/data-modelling-basics/dbt-docs/>.
+
+dbt docs is built for desktop (`.app { min-width: 960px }`), so the deploy
+inlines [`docs_mobile/`](docs_mobile/) into the page: below 960px the content
+uses the full width, the model tree becomes a drawer behind a **Models**
+button, and the lineage graph opens full screen. Desktop is unchanged.
